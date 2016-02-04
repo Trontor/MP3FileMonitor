@@ -1,0 +1,10 @@
+d:\documents\rjoshi1\my documents\visual studio 2012\Projects\MP3 File Title Monitor\MP3 File Auto-Tagger\bin\Debug\MP3 File Auto-Tagger.exe.config
+d:\documents\rjoshi1\my documents\visual studio 2012\Projects\MP3 File Title Monitor\MP3 File Auto-Tagger\bin\Debug\MP3 File Auto-Tagger.exe
+d:\documents\rjoshi1\my documents\visual studio 2012\Projects\MP3 File Title Monitor\MP3 File Auto-Tagger\bin\Debug\MP3 File Auto-Tagger.pdb
+d:\documents\rjoshi1\my documents\visual studio 2012\Projects\MP3 File Title Monitor\MP3 File Auto-Tagger\obj\Debug\MP3 File Auto-Tagger.exe
+d:\documents\rjoshi1\my documents\visual studio 2012\Projects\MP3 File Title Monitor\MP3 File Auto-Tagger\obj\Debug\MP3 File Auto-Tagger.pdb
+d:\documents\rjoshi1\my documents\visual studio 2012\Projects\MP3 File Title Monitor\MP3 File Auto-Tagger\obj\Debug\MP3 File Auto-Tagger.csprojResolveAssemblyReference.cache
+d:\documents\rjoshi1\my documents\visual studio 2012\Projects\MP3 File Title Monitor\MP3 File Auto-Tagger\bin\Debug\taglib-sharp.dll
+D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\bin\Debug\MP3 File Auto-Tagger.exe.config
+D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.exe
+D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.pdb
