@@ -28,23 +28,37 @@ namespace MP3_File_Auto_Tagger
             {
                 if (!_fileName.Contains(".ini"))
                 {
-                    string newFileName = _fileName;
-                    string[] filePaths = _fileName.Replace(".mp3", "").Trim().Split(new string[] { "-" }, StringSplitOptions.None);
-                    string startOfFile = filePaths[0];
-                    string endOfFile = filePaths[1];
-                    string fileNameWithoutExtension = _fileName.Replace(".mp3", "");
-                     
-                    if (startOfFile.Contains("(ft.") && startOfFile[startOfFile.Length - 1] != ')') 
-                        newFileName = startOfFile.Insert(startOfFile.Length, ")") + " - " + endOfFile; 
-
-                    if (endOfFile.Contains("(ft.") && endOfFile[endOfFile.Length - 1] != ')')
-                        newFileName = fileNameWithoutExtension.Insert(fileNameWithoutExtension.Length, ")");
-
-                    Console.WriteLine(newFileName);
+                    
+                    Console.WriteLine(FixFilename(_fileName));
                 }
             }
             Console.ReadKey();
         }
+        /// <summary>
+        /// Make sure you are passing a PATH not a FILENAME
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        /// Path Format : D:\Music\Artist FEAT testIfy - Title ft test
+        private static string FixFilename(string path)
+        {
+            //Returns: string[0] = Artist FEAT testIfy  string[1] = Title ft test
+            string[] filePaths = path.Replace(".mp3", "").Trim().Split(new string[] { "-" }, StringSplitOptions.None);
+            
+            //
+            string startOfFile = filePaths[0].Trim();
+            string endOfFile = filePaths[1].Trim();
+            string fileNameWithoutExtension = _fileName.Replace(".mp3", "");
+
+            if (startOfFile.Contains("(ft.") && startOfFile[startOfFile.Length - 1] != ')')
+                newFileName = startOfFile.Insert(startOfFile.Length, ")") + " - " + endOfFile;
+
+            if (endOfFile.Contains("(ft.") && endOfFile[endOfFile.Length - 1] != ')')
+                newFileName = fileNameWithoutExtension.Insert(fileNameWithoutExtension.Length, ")");
+
+
+        }
+
         [DllImport("kernel32.dll")]
         static extern IntPtr GetConsoleWindow();
 

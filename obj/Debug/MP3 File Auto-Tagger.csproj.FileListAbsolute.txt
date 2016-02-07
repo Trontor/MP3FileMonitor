@@ -13,3 +13,7 @@ C:\Users\Rohyl Joshi\Documents\GitHub\MP3FileMonitor\bin\Debug\MP3 File Auto-Tag
 C:\Users\Rohyl Joshi\Documents\GitHub\MP3FileMonitor\bin\Debug\MP3 File Auto-Tagger.pdb
 C:\Users\Rohyl Joshi\Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.exe
 C:\Users\Rohyl Joshi\Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.pdb
+D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.csprojResolveAssemblyReference.cache
+D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\bin\Debug\MP3 File Auto-Tagger.exe
+D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\bin\Debug\MP3 File Auto-Tagger.pdb
+D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\bin\Debug\taglib-sharp.dll
