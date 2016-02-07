@@ -8,12 +8,12 @@ d:\documents\rjoshi1\my documents\visual studio 2012\Projects\MP3 File Title Mon
 D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\bin\Debug\MP3 File Auto-Tagger.exe.config
 D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.exe
 D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.pdb
+D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.csprojResolveAssemblyReference.cache
+D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\bin\Debug\MP3 File Auto-Tagger.exe
+D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\bin\Debug\MP3 File Auto-Tagger.pdb
+D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\bin\Debug\taglib-sharp.dll
 C:\Users\Rohyl Joshi\Documents\GitHub\MP3FileMonitor\bin\Debug\MP3 File Auto-Tagger.exe.config
 C:\Users\Rohyl Joshi\Documents\GitHub\MP3FileMonitor\bin\Debug\MP3 File Auto-Tagger.exe
 C:\Users\Rohyl Joshi\Documents\GitHub\MP3FileMonitor\bin\Debug\MP3 File Auto-Tagger.pdb
 C:\Users\Rohyl Joshi\Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.exe
 C:\Users\Rohyl Joshi\Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.pdb
-D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.csprojResolveAssemblyReference.cache
-D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\bin\Debug\MP3 File Auto-Tagger.exe
-D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\bin\Debug\MP3 File Auto-Tagger.pdb
-D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\bin\Debug\taglib-sharp.dll
