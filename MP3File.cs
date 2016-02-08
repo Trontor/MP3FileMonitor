@@ -2,14 +2,29 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using File = TagLib.File;
 
 namespace MP3_File_Auto_Tagger
 {
     internal class Mp3File
     {
-        private List<string> Artists = new List<string>();
+        public string FixFileName(string path)
+        {
+            if (path == null) throw new ArgumentNullException("path");
+            FilePath = path;
+            FileName = Path.GetFileName(path).Replace(".mp3", "");
+            FindAndReplace();
+            CompleteFeaturingBrackets();
+            ExtractArtists();
+            AttachFeaturedArtists();
+            WriteId3Tags();
+            return FileName;
+        }
+        private List<string> _artists = new List<string>();
 
+        public bool ReverseSplitHeifen = false;
         public string FilePath { get; set; }
+        public string FileNameNoAttachedArtists = "";
         public string FileName { get; set; }
         public string BaseArtist { get; set; }
 
@@ -32,7 +47,7 @@ namespace MP3_File_Auto_Tagger
             {
                 case 0:
                     test.AddRange(inputString.Split(c));
-                    break;
+                        break;
                 case 1:
                     string str1 = inputString.Split(c)[0];
                     string str2 = inputString.Split(c)[1];
@@ -41,65 +56,67 @@ namespace MP3_File_Auto_Tagger
                     test.Add(str1);
                     test.Add(end);
                     break;
+                case 2:
+                    string sts1 = inputString.Split(c)[0];
+                    string sts2 = inputString.Split(c)[1];
+                    string sts3 = inputString.Split(c)[2];
+                    string start = sts1 + c + sts2;
+                    test.Add(start);
+                    test.Add(sts3);
+                    break;
             }
             return test.ToArray();
         }
 
-        public string FixFileName(string path)
-        {
-            if (path == null) throw new ArgumentNullException("path");
-            FilePath = path;
-            FileName = Path.GetFileName(path).Replace(".mp3", "");
-            FindAndReplace();
-            CompleteFeaturingBrackets();
-            ExtractArtists();
-            AttachFeaturedArtists();
-            WriteId3Tags();
-            return FileName;
-        }
 
         private void WriteId3Tags()
         {
-            var file = TagLib.File.Create(FilePath);
             if (FileName.Contains("-"))
             {
-                var split = SplitBy(FileName.Replace(".mp3", ""), '-', SplitHeifenKey).ToArray();
-                string title = split[1].Trim();
-                file.Tag.Performers = null;
-                file.Tag.Performers = Artists.ToArray<string>();
-                file.Tag.Title = title;
-                file.Save();
+                using (var file = File.Create(FilePath))
+                {
+                    var split = SplitBy(FileNameNoAttachedArtists.Replace(".mp3", ""), '-', ReverseSplitHeifen ? 0 : SplitHeifenKey).ToArray();
+                    string title = split[1].Trim();
+                    file.Tag.Performers = null;
+                    file.Tag.Performers = _artists.ToArray<string>();
+                    file.Tag.Title = title;
+                    file.Save();
+                    file.Dispose();
+                }
             }
-            file.Dispose();
         }
 
         private void AttachFeaturedArtists()
         {
-            if (Artists.Count > 1)
-                FileName += " (ft. ";
-            Artists.Reverse();
-            Artists = Artists.OrderBy(x => x != BaseArtist).ToList();
-            for (int i = 0; i < Artists.Count; i++)
+            FileNameNoAttachedArtists = FileName;
+            if (_artists.Count > 1)
             {
-                Artists[i] = Artists[i].Trim();
+                ReverseSplitHeifen = true;
+                FileName += " (ft. ";
+            }
+            _artists.Reverse();
+            _artists = _artists.OrderBy(x => x != BaseArtist).ToList();
+            for (var i = 0; i < _artists.Count; i++)
+            {
+                _artists[i] = _artists[i].Trim();
             }
             string result = FileName;
-            List<string> orderedList = Artists.OrderBy(x => x).ToList();
+            var orderedList = _artists.OrderBy(x => x).ToList();
             foreach (string str in orderedList)
             {
                 if (str != BaseArtist)
                     result = result + str +
-                             ((orderedList.IndexOf(str) == Artists.Count - 1) || Artists.Count == 2 ? "" : ", ");
+                             ((orderedList.IndexOf(str) == _artists.Count - 1) || _artists.Count == 2 ? "" : ", ");
             }
             FileName = result;
-            if (Artists.Count > 1)
+            if (_artists.Count > 1)
                 FileName = FileName.Trim() + ")";
         }
 
         private static int IndexOfNth(string str, char c, int n)
         {
             int s = -1;
-            for (int i = 0; i < n; i++)
+            for (var i = 0; i < n; i++)
             {
                 s = str.IndexOf(c, s + 1);
 
@@ -120,7 +137,7 @@ namespace MP3_File_Auto_Tagger
             int instanceCount = s.Count(f => f == '-');
             if (instanceCount > 1 && SplitHeifenKey == 0)
             {
-                bool notReplaced = true;
+                var notReplaced = true;
                 while (notReplaced)
                 {
                     notReplaced = false;
@@ -155,30 +172,37 @@ namespace MP3_File_Auto_Tagger
                 {"FEATURING", "FT"},
                 {" featuring ", "ft.  "},
                 {" (Featuring ", " (ft. "},
-                {" FEAT", " (FEAT"},
+                {" FEAT ", " (FEAT "},
+                {" Feat ", " (FEAT "},
                 {"(FEAT", "(feat"},
-                {"FEAT", "ft"},
+                {"(feat", "(ft"},
+                {"FEAT ", "ft"},
                 {"FT ", "ft. "},
                 {"Ft ", "ft. "},
                 {"ft ", "ft. "},
                 {" FT. ", " (ft. "},
-                {" FT", "(ft"},
+                {" FT", " (ft"},
                 {"(FT ", "(ft. "},
                 {" (ft ", " (ft."},
                 {" (Ft ", "(ft. "}
             };
             while (true)
             {
-                bool replaced = false;
-                foreach (
-                    var replaceItem in
-                        replaceList.Where(replaceItem => FileName.ToLower().Contains(replaceItem.Key.ToLower())))
+                var reiterate = false;
+                foreach (var vari in replaceList)
                 {
-                    FileName = FileName.Replace(replaceItem.Key.ToLower(), replaceItem.Value);
-                    FileName = FileName.Replace(replaceItem.Key, replaceItem.Value);
-                    replaced = true;
+                    if (FileName.ToLower().Contains(vari.Key.ToLower()))
+                        reiterate = true;
                 }
-                if (replaced) continue;
+                if (reiterate)
+                    foreach (
+                        var replaceItem in
+                            replaceList.Where(replaceItem => FileName.ToLower().Contains(replaceItem.Key.ToLower())))
+                    {
+                        FileName = FileName.Replace(replaceItem.Key.ToLower(), replaceItem.Value);
+                        FileName = FileName.Replace(replaceItem.Key, replaceItem.Value);
+                    }
+                if (reiterate) continue;
                 break;
             }
         }
@@ -227,13 +251,13 @@ namespace MP3_File_Auto_Tagger
                 }
                 else
                     artists.Add(featuringFinal.Replace("(ft.", "").Trim());
-                Artists.AddRange(artists);
+                _artists.AddRange(artists);
                 newStart = Start.Replace(featuringStart, "").Trim();
             }
             else
                 baseArtist = Start;
 
-            Artists.Add(baseArtist);
+            _artists.Add(baseArtist);
             if (End.Contains("(ft."))
             {
                 int ftIndex = End.IndexOf("(ft.", StringComparison.Ordinal);
@@ -248,11 +272,11 @@ namespace MP3_File_Auto_Tagger
                 }
                 else
                     artists.Add(featuringFinal.Replace("(ft.", "").Trim());
-                Artists.AddRange(artists);
+                _artists.AddRange(artists);
                 newEnd = End.Replace(featuringEnd, "").Trim();
             }
 
-            Artists.Reverse();
+            _artists.Reverse();
             if (newStart == null)
                 newStart = Start;
             if (newEnd == null)
