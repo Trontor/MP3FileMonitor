@@ -16,3 +16,6 @@ D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\bin\Debug\MP3 File Auto-
 D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\bin\Debug\taglib-sharp.dll
 D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.exe
 D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.pdb
+C:\Users\Rohyl Joshi\Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.csprojResolveAssemblyReference.cache
+C:\Users\Rohyl Joshi\Documents\GitHub\MP3FileMonitor\obj\Debug\MP3_File_Auto_Tagger.Properties.Resources.resources
+C:\Users\Rohyl Joshi\Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.csproj.GenerateResource.Cache
