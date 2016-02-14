@@ -6,8 +6,23 @@ using System.Xml.Linq;
 
 namespace MP3_File_Auto_Tagger
 {
-    internal class Mp3File
+    public class Mp3File
     {
+        public static void Space()
+        {
+            Console.WriteLine("");
+        }
+        public static void ColoredConsoleWrite(ConsoleColor color, string text, bool writeOnly = false)
+        {
+            ConsoleColor originalColor = Console.ForegroundColor;
+            Console.ForegroundColor = color;
+            if (writeOnly)
+                Console.Write(text);
+            else
+                Console.WriteLine(text);
+            Console.ForegroundColor = originalColor;
+        }
+
         private static Dictionary<string, string> _dictionary = new Dictionary<string, string>();
 
         private readonly List<string> _artists = new List<string>();
@@ -107,7 +122,7 @@ namespace MP3_File_Auto_Tagger
 
         private void WriteId3Tags()
         {
-            bool modified = false;
+            var modified = false;
             if (FileName.Contains("-"))
             {
                 using (var file = TagLib.File.Create(FilePath))
@@ -199,13 +214,15 @@ namespace MP3_File_Auto_Tagger
                 while (notReplaced)
                 {
                     notReplaced = false;
-                    Console.WriteLine("----------------------------");
-                    Console.WriteLine("The file:{0} has more than one heifen:", FileName);
-                    Console.WriteLine("Which heifen do you want to use?");
+                    ColoredConsoleWrite(ConsoleColor.Cyan, "----------------------------");
+                    ColoredConsoleWrite(ConsoleColor.Red, string.Format("The file:{0} has more than one heifen:", FileName));
+                    Console.WriteLine("I'm not too sure which heifen you want to use.");
                     Console.WriteLine("Write an integer value corresponding with its occurence count (1 - {0}).",
                         instanceCount);
-                    Console.WriteLine("----------------------------");
-                    Console.WriteLine("I want to split heifen number: ");
+                    ColoredConsoleWrite(ConsoleColor.Cyan, "----------------------------");
+                    Space();
+                    ColoredConsoleWrite(ConsoleColor.White, "I want to split heifen number: ", true);
+
                     int key;
                     if (!int.TryParse(Console.ReadLine(), out key)) continue;
                     SplitHeifenKey = key;
@@ -225,10 +242,12 @@ namespace MP3_File_Auto_Tagger
         {
             var replaceList = new Dictionary<string, string>
             {
+                {"[", "("},
+                {"]", ")"},
                 {"OFFICIAL", ""},
                 {"Official", ""},
-                {"Video)", ""},
-                {"video)", ""},
+                {"Video)", "|"},
+                {"video)", "|"},
                 {"FEATURING", "FT"},
                 {" featuring ", "ft.  "},
                 {" (Featuring ", " (ft. "},
@@ -236,11 +255,13 @@ namespace MP3_File_Auto_Tagger
                 {" FEAT ", " (FEAT "},
                 {" Feat ", " (FEAT "},
                 {" feat. ", " (FEAT "},
+                {"(Feat.", "(ft."},
                 {"(FEAT", "(feat"},
                 {"(feat", "(ft"},
                 {"FEAT ", "ft"},
                 {"( )", ""},
                 {"()", ""},
+                {"(|", ""},
                 {"(  )", ""},
                 {"FT ", "ft. "},
                 {"Ft ", "ft. "},
