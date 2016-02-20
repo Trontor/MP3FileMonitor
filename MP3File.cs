@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using HtmlAgilityPack;
+using TagLib;
+using File = System.IO.File;
 
 namespace MP3_File_Auto_Tagger
 {
@@ -12,6 +15,7 @@ namespace MP3_File_Auto_Tagger
         {
             Console.WriteLine("");
         }
+
         public static void ColoredConsoleWrite(ConsoleColor color, string text, bool writeOnly = false)
         {
             ConsoleColor originalColor = Console.ForegroundColor;
@@ -32,6 +36,7 @@ namespace MP3_File_Auto_Tagger
         public string FilePath { get; set; }
         public string FileName { get; set; }
         public string BaseArtist { get; set; }
+
 
         public string Start
         {
