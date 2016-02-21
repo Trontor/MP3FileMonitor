@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Web;
 using System.Windows.Forms;
 using System.Xml.Serialization;
 using HtmlAgilityPack;
@@ -21,11 +22,9 @@ namespace MP3_File_Auto_Tagger
 {
     public class item
     {
-        [XmlAttribute]
-        public string key;
+        [XmlAttribute] public string key;
 
-        [XmlAttribute]
-        public string value;
+        [XmlAttribute] public string value;
     }
 
     /// <summary>
@@ -56,6 +55,8 @@ namespace MP3_File_Auto_Tagger
 
         private static int tableWidth = 77;
         private static ConsoleColor _lastClr;
+
+        private static int _processedArtwork;
 
         /// <summary>
         ///     Resize the image to the specified width and height.
@@ -89,34 +90,10 @@ namespace MP3_File_Auto_Tagger
             return destImage;
         }
 
-        private static void DrawImage(string filePath)
-        {
-            var baseImg = Image.FromFile(filePath);
-            Image Picture = ResizeImage(baseImg, baseImg.Width / 1, baseImg.Height / 1);
-            Console.SetBufferSize(Picture.Width * 0x90, Picture.Height * 0x90);
-            var Dimension = new FrameDimension(Picture.FrameDimensionsList[0x0]);
-            int FrameCount = Picture.GetFrameCount(Dimension);
-            int Left = Console.WindowLeft, Top = Console.WindowTop;
-            char[] Chars = { '#', '#', '@', '%', '=', '+', '*', ':', '-', '.', ' ' };
-            Picture.SelectActiveFrame(Dimension, 0x0);
-            for (var i = 0x0; i < Picture.Height; i++)
-            {
-                for (var x = 0x0; x < Picture.Width; x++)
-                {
-                    var Color = ((Bitmap)Picture).GetPixel(x, i);
-                    int Gray = (Color.R + Color.G + Color.B) / 0x3;
-                    int Index = Gray * (Chars.Length - 0x1) / 0xFF;
-                    Console.Write(Chars[Index]);
-                }
-                Console.Write('\n');
-            }
-            //  Console.SetCursorPosition(Left, Top); 
-            doneDrawing = true;
-        }
         public static void Do(
-    Action action,
-    TimeSpan retryInterval,
-    int retryCount = 3)
+            Action action,
+            TimeSpan retryInterval,
+            int retryCount = 3)
         {
             Do<object>(() =>
             {
@@ -124,6 +101,7 @@ namespace MP3_File_Auto_Tagger
                 return null;
             }, retryInterval, retryCount);
         }
+
         public static T Do<T>(
             Func<T> action,
             TimeSpan retryInterval,
@@ -148,10 +126,9 @@ namespace MP3_File_Auto_Tagger
             throw new AggregateException(exceptions);
         }
 
-        private static bool GoogleImageSearch(string query)
+        private static bool GoogleImageSearch(string query, bool showdialog = false)
         {
-            var lastLoc = Point.Empty;
-            string entitized = HtmlEntity.Entitize(query);
+            string entitized = HttpUtility.UrlEncode(query);
             string url = string.Format("https://www.google.com.au/search?q={0}&tbm=isch",
                 entitized + " song cover artwork");
             using (var client = new WebClient()) // WebClient class inherits IDisposable
@@ -161,8 +138,13 @@ namespace MP3_File_Auto_Tagger
                 string htmlCode = client.DownloadString(url);
                 var doc = new HtmlDocument();
                 doc.LoadHtml(htmlCode);
-                foreach (var eleImg in doc.DocumentNode.SelectSingleNode("//*[@id=\"images\"]").ChildNodes)
+                for (var index = 0;
+                    index < doc.DocumentNode.SelectSingleNode("//*[@id=\"images\"]").ChildNodes.Count;
+                    index++)
                 {
+                    if (index < 0)
+                        index = 0;
+                    var eleImg = doc.DocumentNode.SelectSingleNode("//*[@id=\"images\"]").ChildNodes[index];
                     string thumbNailUrl = eleImg.FirstChild.Attributes["src"].Value;
                     string tempPath = Path.GetTempFileName();
 
@@ -171,8 +153,7 @@ namespace MP3_File_Auto_Tagger
                     var rightmost = Screen.AllScreens[0];
                     foreach (
                         var screen in
-                            Screen.AllScreens.Where(screen => screen.WorkingArea.Right > rightmost.WorkingArea.Right)
-                        )
+                            Screen.AllScreens.Where(screen => screen.WorkingArea.Right > rightmost.WorkingArea.Right))
                     {
                         rightmost = screen;
                     }
@@ -190,13 +171,11 @@ namespace MP3_File_Auto_Tagger
                             innerDoc.DocumentNode.Descendants()
                                 .Where(
                                     element =>
-                                        element.InnerText.Contains("full size") &&
-                                        element.Attributes.Contains("href")))
+                                        element.InnerText.Contains("full size") && element.Attributes.Contains("href")))
                     {
                         using (var imgClient = new WebClient()) // WebClient class inherits IDisposable
                         {
                             tempPath = Path.GetTempFileName();
-
                             try
                             {
                                 Do(() => imgClient.DownloadFile(element.Attributes["href"].Value, tempPath),
@@ -206,66 +185,86 @@ namespace MP3_File_Auto_Tagger
                             {
                                 return false;
                             }
-
                         }
                     }
                     var noArtwork = false;
                     var applyArtwork = false;
-                    var f = new Form
+                    if (Settings.Default.LastSize.Height == 0 || Settings.Default.LastSize.Width == 0)
                     {
-                        FormBorderStyle = FormBorderStyle.Fixed3D,
-                        Size = new Size(500, 500),
-                        Text = query,
-                        UseWaitCursor = false
-                    };
-                    //f.Size = Image.FromFile(tempPath).Size;
-                    f.BackgroundImage = ResizeImage(Image.FromFile(tempPath), f.Width, f.Height);
-                    f.FormClosing += (l, m) => { lastLoc = f.Location; };
-                    f.KeyDown += (k, fs) =>
+                        Settings.Default.LastSize = new Size(500, 500);
+                    }
+
+
+                    if (showdialog)
                     {
-                        if (fs.KeyCode == Keys.Enter)
+                        var f = new Form
                         {
-                            applyArtwork = true;
-                        }
-                        else if (fs.KeyCode == Keys.Escape)
-                            noArtwork = true;
-                        f.Close();
-                    };
-                    f.Load += (o, e) =>
-                    {
-                        if (lastLoc == null)
+                            FormBorderStyle = FormBorderStyle.SizableToolWindow,
+                            Size = Settings.Default.LastSize,
+                            UseWaitCursor = false
+                        };
+                        f.Resize += (i, u) =>
                         {
-                            f.Left = rightmost.WorkingArea.Right - f.Width;
-                            f.Top = rightmost.WorkingArea.Bottom - f.Height;
-                        }
-                        else
-                            f.Location = lastLoc;
-                        f.TopMost = true;
-                        f.Focus();
-                        var t = new Timer { Interval = 5000 };
-                        t.Tick += (k, z) =>
+                            var control = (Control) i;
+                            control.Width = control.Height;
+                        };
+                        //f.Size = Image.FromFile(tempPath).Size;
+                        f.BackgroundImage = ResizeImage(Image.FromFile(tempPath), f.Width, f.Height);
+                        f.FormClosing += (l, m) =>
                         {
-                            applyArtwork = true;
+                            Settings.Default.LastSize = f.Size;
+                            Settings.Default.LastLocation = f.Location;
+                        };
+                        f.KeyDown += (k, fs) =>
+                        {
+                            if (fs.KeyCode == Keys.Enter)
+                            {
+                                applyArtwork = true;
+                            }
+                            else if (fs.KeyCode == Keys.Escape)
+                            {
+                                noArtwork = true;
+                            }
+                            else if (fs.KeyCode == Keys.Left)
+                            {
+                                index -= 2;
+                            }
                             f.Close();
                         };
-                        t.Enabled = true;
-                    };
-                    f.ShowDialog();
-                    f.Cursor = Cursors.Default;
+
+                        f.Text = query;
+                        f.Load += (o, e) =>
+                        {
+                            if (Settings.Default.LastLocation.X == 0)
+                            {
+                                f.Left = rightmost.WorkingArea.Right - f.Width;
+                                f.Top = rightmost.WorkingArea.Bottom - f.Height;
+                            }
+                            else
+                                f.Location = Settings.Default.LastLocation;
+                            f.TopMost = true;
+                            var t = new Timer {Interval = 10000};
+                            t.Tick += (k, z) =>
+                            {
+                                applyArtwork = true;
+                                f.Close();
+                            };
+                            t.Enabled = true;
+                        };
+                        f.TopMost = true;
+                        f.ShowDialog();
+                    }
+                    else
+                        applyArtwork = true;
+                    Settings.Default.Save();
                     if (noArtwork)
                         return false;
                     if (!applyArtwork) continue;
                     AddArtwork(Path.Combine(path, query + ".mp3"), tempPath);
                     return true;
-
                 }
                 return false;
             }
-        }
-
-        private static void F_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            throw new NotImplementedException();
         }
 
         public static void AddArtwork(string filePath, string imgPath)
@@ -273,7 +272,7 @@ namespace MP3_File_Auto_Tagger
             using (var file = File.Create(filePath))
             {
                 IPicture artwork = new Picture(imgPath);
-                file.Tag.Pictures = new IPicture[1] { artwork };
+                file.Tag.Pictures = new IPicture[1] {artwork};
                 file.Save();
             }
         }
@@ -284,24 +283,35 @@ namespace MP3_File_Auto_Tagger
 
         private static void AnalyseAllFiles()
         {
+            Filter = false;
             if (Filter)
-                path = Path.Combine(path, "filter");
+                path = Path.Combine(@"D:\Music - Copy", "filter");
             files = Directory.GetFiles(path, "*.mp3", SearchOption.TopDirectoryOnly);
-            int fileCount = files.Count();
+
             foreach (string filePath in files)
             {
                 if (!filePath.Contains(".ini"))
-                {
                     using (var file = File.Create(filePath))
                     {
                         if (!file.Tag.Pictures.Any())
-                        {
-                            if (GoogleImageSearch(Path.GetFileNameWithoutExtension(filePath)))
-                                ColoredConsoleWrite(ConsoleColor.Red,
-                                    "Artwork for File ( " + Array.IndexOf(files, filePath) + "/" + fileCount + " )");
-                        }
-                        FixFile(filePath);
+                            new Thread(() => { ProcessArtwork(filePath); }).Start();
+                        Thread.Sleep(20);
                     }
+
+                FixFile(filePath);
+            }
+        }
+
+        private static void ProcessArtwork(string filename, bool showdiag = false)
+        {
+            if (filename.Contains("-"))
+            {
+                int fileCount = files.Count();
+                if (GoogleImageSearch(Path.GetFileNameWithoutExtension(filename), showdiag))
+                {
+                    _processedArtwork++;
+                    ColoredConsoleWrite(ConsoleColor.Red,
+                        "Artwork for File ( " + _processedArtwork + "/" + fileCount + " )");
                 }
             }
         }
@@ -313,7 +323,7 @@ namespace MP3_File_Auto_Tagger
             ShowWindow(GetConsoleWindow(), SW_HIDE);
             WindowHidden = true;
             var notifyThread = new Thread(
-                delegate ()
+                delegate()
                 {
                     menu = new ContextMenu();
 
@@ -334,7 +344,7 @@ namespace MP3_File_Auto_Tagger
                 );
             files = Directory.GetFiles(path, "*.mp3", SearchOption.TopDirectoryOnly);
             notifyThread.Start();
-            var monitor = new FileSystemWatcher(path, "*.mp3") { EnableRaisingEvents = true };
+            var monitor = new FileSystemWatcher(path, "*.mp3") {EnableRaisingEvents = true};
             monitor.Created += monitor_CreatedOrChanged;
             monitor.Renamed += monitor_CreatedOrChanged;
             AnalyseAllFiles();
@@ -355,6 +365,31 @@ namespace MP3_File_Auto_Tagger
                     case "analyse":
                         AnalyseAllFiles();
                         break;
+                    case "dump artwork":
+                        DumpArtwork();
+                        break;
+                }
+            }
+        }
+
+        private static void DumpArtwork()
+        {
+            var spath = @"D:\Artwork Dump";
+
+            files = Directory.GetFiles(path, "*.mp3", SearchOption.TopDirectoryOnly);
+            Directory.CreateDirectory(spath);
+            foreach (string filePath in files)
+            {
+                using (var file = File.Create(filePath))
+                {
+                    if (!file.Tag.Pictures.Any()) continue;
+                    using (var ms = new MemoryStream(file.Tag.Pictures[0].Data.Data))
+                    {
+                        if (filePath.EndsWith(".ini.mp3")) continue;
+                        string savePath = Path.Combine(spath, Path.GetFileNameWithoutExtension(filePath) + ".jpg");
+                        var img = Image.FromStream(ms);
+                        img.Save(savePath);
+                    }
                 }
             }
         }
@@ -372,7 +407,6 @@ namespace MP3_File_Auto_Tagger
                 ShowWindow(GetConsoleWindow(), SW_HIDE);
             }
         }
-
 
         public static void Space()
         {
@@ -392,7 +426,7 @@ namespace MP3_File_Auto_Tagger
 
         private static T GetRandomEnum<T>()
         {
-            return Enum.GetValues(typeof(T)).Cast<T>().OrderBy(e => Guid.NewGuid()).First();
+            return Enum.GetValues(typeof (T)).Cast<T>().OrderBy(e => Guid.NewGuid()).First();
         }
 
         private static void mnuExit_Click(object sender, EventArgs e)
@@ -404,6 +438,9 @@ namespace MP3_File_Auto_Tagger
 
         private static void FixFile(string filePath)
         {
+            if (filePath.Contains("summer"))
+            {
+            }
             var file = new Mp3File();
             string finalName = file.FixFileName(filePath);
             string movePath = Path.Combine(path, finalName + ".mp3");
@@ -419,7 +456,7 @@ namespace MP3_File_Auto_Tagger
 
         private static void PrintRow(params string[] columns)
         {
-            int width = (tableWidth - columns.Length) / columns.Length;
+            int width = (tableWidth - columns.Length)/columns.Length;
             var row = "|";
 
             foreach (string column in columns)
@@ -433,12 +470,9 @@ namespace MP3_File_Auto_Tagger
         private static string AlignCentre(string text, int width)
         {
             text = text.Length > width ? text.Substring(0, width - 3) + "..." : text;
-
-            if (string.IsNullOrEmpty(text))
-            {
-                return new string(' ', width);
-            }
-            return text.PadRight(width - (width - text.Length) / 2).PadLeft(width);
+            return string.IsNullOrEmpty(text)
+                ? new string(' ', width)
+                : text.PadRight(width - (width - text.Length)/2).PadLeft(width);
         }
 
         private static void mnuArtists_Click(object sender, EventArgs e)
@@ -467,7 +501,7 @@ namespace MP3_File_Auto_Tagger
                 }
             }
             string longeststring = list.OrderByDescending(s => s.Length).First();
-            tableWidth = longeststring.Length * 7 + 5;
+            tableWidth = longeststring.Length*7 + 5;
             var strings = DivideStrings(7, list.ToArray());
             foreach (var strs in strings)
             {
@@ -486,12 +520,12 @@ namespace MP3_File_Auto_Tagger
         {
             var arrays = new List<string[]>();
 
-            int arrayCount = allStrings.Length / expectedStringsPerArray;
+            int arrayCount = allStrings.Length/expectedStringsPerArray;
 
             int elemsRemaining = allStrings.Length;
             for (int arrsRemaining = arrayCount; arrsRemaining >= 1; arrsRemaining--)
             {
-                int elementCount = elemsRemaining / arrsRemaining;
+                int elementCount = elemsRemaining/arrsRemaining;
 
                 var array = CopyPart(allStrings, elemsRemaining - elementCount, elementCount);
                 arrays.Insert(0, array);
@@ -514,6 +548,7 @@ namespace MP3_File_Auto_Tagger
             {
                 files = Directory.GetFiles(path, "*.mp3", SearchOption.TopDirectoryOnly);
                 FixFile(e.FullPath);
+                ProcessArtwork(e.FullPath, true);
             }
             catch
             {

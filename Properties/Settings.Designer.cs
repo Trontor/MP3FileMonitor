@@ -22,5 +22,29 @@ namespace MP3_File_Auto_Tagger.Properties {
                 return defaultInstance;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0, 0")]
+        public global::System.Drawing.Point LastLocation {
+            get {
+                return ((global::System.Drawing.Point)(this["LastLocation"]));
+            }
+            set {
+                this["LastLocation"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0, 0")]
+        public global::System.Drawing.Size LastSize {
+            get {
+                return ((global::System.Drawing.Size)(this["LastSize"]));
+            }
+            set {
+                this["LastSize"] = value;
+            }
+        }
     }
 }
