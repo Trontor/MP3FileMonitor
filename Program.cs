@@ -20,11 +20,13 @@ using Timer = System.Windows.Forms.Timer;
 
 namespace MP3_File_Auto_Tagger
 {
-    public class item
+    public class Item
     {
-        [XmlAttribute] public string key;
+        [XmlAttribute]
+        public string Key;
 
-        [XmlAttribute] public string value;
+        [XmlAttribute]
+        public string Value;
     }
 
     /// <summary>
@@ -42,24 +44,22 @@ namespace MP3_File_Auto_Tagger
 
     internal class Program
     {
-        private const int SW_HIDE = 0;
-        private const int SW_SHOW = 5;
+        private const int SwHide = 0;
+        private const int SwShow = 5;
 
-        private static bool doneDrawing;
-        private static bool WindowHidden;
-        public static ContextMenu menu;
-        public static NotifyIcon notificationIcon;
-        private static string path = @"D:\Music";
-        private static bool Filter;
-        private static string[] files;
+        private static bool _windowHidden;
+        public static ContextMenu Menu;
+        public static NotifyIcon NotificationIcon;
+        private static string _path = @"D:\Music";
+        private static bool _filter;
+        private static string[] _files;
 
-        private static int tableWidth = 77;
-        private static ConsoleColor _lastClr;
+        private static int _tableWidth = 77;
 
         private static int _processedArtwork;
 
         /// <summary>
-        ///     Resize the image to the specified width and height.
+        /// Resize the image to the specified width and height.
         /// </summary>
         /// <param name="image">The image to resize.</param>
         /// <param name="width">The width to resize to.</param>
@@ -125,6 +125,62 @@ namespace MP3_File_Auto_Tagger
 
             throw new AggregateException(exceptions);
         }
+        private static void Main(string[] args)
+        {
+            if (_filter)
+                _path = @"D:\Music - Copy";
+            ShowWindow(GetConsoleWindow(), SwHide);
+            _windowHidden = true;
+            var notifyThread = new Thread(
+                delegate ()
+                {
+                    Menu = new ContextMenu();
+
+                    Menu.MenuItems.Add(0, new MenuItem("List Artists", mnuArtists_Click));
+                    Menu.MenuItems.Add(1, new MenuItem("Exit", mnuExit_Click));
+
+                    NotificationIcon = new NotifyIcon
+                    {
+                        Icon = Resources.mp34,
+                        ContextMenu = Menu,
+                        Text = "MP3 File Monitor -- Made for Rohyl, by Rohyl"
+                    };
+                    NotificationIcon.DoubleClick += NotificationIcon_Click;
+
+                    NotificationIcon.Visible = true;
+                    Application.Run();
+                }
+                );
+            _files = Directory.GetFiles(_path, "*.mp3", SearchOption.TopDirectoryOnly);
+            notifyThread.Start();
+            var monitor = new FileSystemWatcher(_path, "*.mp3") { EnableRaisingEvents = true };
+            monitor.Created += monitor_CreatedOrChanged;
+            monitor.Renamed += monitor_CreatedOrChanged;
+            AnalyseAllFiles();
+            ScanAriaCharts();
+            while (true)
+            {
+                switch (Console.ReadLine())
+                {
+                    case "filter":
+                        _filter = true;
+                        _path = @"D:\Music - Copy";
+                        ColoredConsoleWrite(ConsoleColor.Cyan, "Filter has been enabled.");
+                        break;
+                    case "regular":
+                        _filter = false;
+                        _path = @"D:\Music";
+                        ColoredConsoleWrite(ConsoleColor.Cyan, "Filter has been disabled.");
+                        break;
+                    case "analyse":
+                        AnalyseAllFiles();
+                        break;
+                    case "dump artwork":
+                        DumpArtwork();
+                        break;
+                }
+            }
+        }
 
         private static bool GoogleImageSearch(string query, bool showdialog = false)
         {
@@ -161,8 +217,7 @@ namespace MP3_File_Auto_Tagger
 
                     string landingPg = HtmlEntity.DeEntitize(eleImg.Attributes["href"].Value);
                     var innerDoc = new HtmlDocument();
-                    client.Headers.Add("user-agent",
-                        "Mozilla/5.0 (MeeGo; NokiaN9) AppleWebKit/534.13 (KHTML, like Gecko) NokiaBrowser/8.5.0 Mobile Safari/534.13");
+                    client.Headers.Add("user-agent", "Mozilla/5.0 (MeeGo; NokiaN9) AppleWebKit/534.13 (KHTML, like Gecko) NokiaBrowser/8.5.0 Mobile Safari/534.13");
                     string inrHTml = client.DownloadString(landingPg);
                     innerDoc.LoadHtml(inrHTml);
 
@@ -205,7 +260,7 @@ namespace MP3_File_Auto_Tagger
                         };
                         f.Resize += (i, u) =>
                         {
-                            var control = (Control) i;
+                            var control = (Control)i;
                             control.Width = control.Height;
                         };
                         //f.Size = Image.FromFile(tempPath).Size;
@@ -243,7 +298,7 @@ namespace MP3_File_Auto_Tagger
                             else
                                 f.Location = Settings.Default.LastLocation;
                             f.TopMost = true;
-                            var t = new Timer {Interval = 10000};
+                            var t = new Timer { Interval = 10000 };
                             t.Tick += (k, z) =>
                             {
                                 applyArtwork = true;
@@ -260,125 +315,193 @@ namespace MP3_File_Auto_Tagger
                     if (noArtwork)
                         return false;
                     if (!applyArtwork) continue;
-                    AddArtwork(Path.Combine(path, query + ".mp3"), tempPath);
+                    AddArtwork(Path.Combine(_path, query + ".mp3"), tempPath);
                     return true;
                 }
                 return false;
             }
         }
 
-        public static void AddArtwork(string filePath, string imgPath)
+        private static string RetreiveLyrics(string filePath)
+        {
+            string lyrics = "";
+            TrontorMP3File file = new TrontorMP3File(filePath);
+            string fileName = Path.GetFileNameWithoutExtension(filePath);
+            string fileTitle = fileName.Split('-')[0].ToLower();
+            string fileArtist = fileName.Split('-')[1].ToLower();
+            string entitized = HttpUtility.UrlEncode(fileArtist + " - " + fileTitle);
+            string url = string.Format("https://www.google.com.au/search?&q={0}+site%3Aazlyrics.com", entitized);
+            using (var client = new WebClient()) // WebClient class inherits IDisposable
+            {
+                client.Headers.Add("user-agent", "Mozilla/5.0 (MeeGo; NokiaN9) AppleWebKit/534.13 (KHTML, like Gecko) NokiaBrowser/8.5.0 Mobile Safari/534.13");
+                string htmlCode = client.DownloadString(url);
+                var doc = new HtmlDocument();
+                doc.LoadHtml(htmlCode);
+                var resultNodes =
+                    doc.DocumentNode.SelectSingleNode("//*[@id=\"universal\"]")
+                        .ChildNodes;
+
+                var htmlNodes = (IList<HtmlNode>)resultNodes ?? resultNodes.ToList();
+                for (var index = 0; index < htmlNodes.Count(); index++)
+                {
+                    var innerNode = htmlNodes[index].ChildNodes[0];
+                    string searchTitle = innerNode.ChildNodes[0].InnerText.ToLower();
+                    string azLyricsUrl = innerNode.ChildNodes[0].Attributes["href"].Value.Replace("/url?q=", "");
+                    if (searchTitle.Contains(fileArtist) && searchTitle.Contains(fileTitle))
+                    {
+                        Thread.Sleep(1000);
+                        using (var webclient = new WebClient()) // WebClient class inherits IDisposable
+                        {
+                            string lyricsHtml = webclient.DownloadString(azLyricsUrl.Split('&')[0]);
+                            var lyricsDoc = new HtmlDocument();
+                            lyricsDoc.LoadHtml(lyricsHtml);
+                            var lyricNodes = lyricsDoc.DocumentNode.SelectSingleNode("/html/body/div[3]/div/div[2]/div[6]");
+                            lyrics = lyricNodes.InnerText.Replace(
+                                    @"\r\n<!-- Usage of azlyrics.com content by any third-party lyrics provider is prohibited by our licensing agreement. Sorry about that. -->\r\n",
+                                    "");
+                        }
+                    }
+                }
+            }
+            return lyrics;
+        }
+
+        public static bool AddArtwork(string filePath, string imgPath)
         {
             using (var file = File.Create(filePath))
             {
                 IPicture artwork = new Picture(imgPath);
-                file.Tag.Pictures = new IPicture[1] {artwork};
+                Image currentImage;
+                Image newImage;
+                long currentSize = 0, newSize = 0;
+                if (file.Tag.Pictures.Any())
+                {
+                    IPicture currentArtwork = file.Tag.Pictures[0];
+                    using (var ms = new MemoryStream(currentArtwork.Data.Data))
+                    {
+                        currentImage = Image.FromStream(ms);
+                        currentSize = ms.Length;
+                    }
+                    using (var ms = new MemoryStream(artwork.Data.Data))
+                    {
+                        newImage = Image.FromStream(ms);
+                        newSize = ms.Length;
+                    }
+                }
+                file.Tag.Pictures = new IPicture[1] { artwork };
                 file.Save();
+                return (currentSize == newSize);
             }
         }
 
-        private static void F_KeyDown(object sender, KeyEventArgs e)
+        private static void ScanAriaCharts()
         {
+            string siteUrl = "http://www.ariacharts.com.au/Charts/Singles-Chart";
+            using (var client = new WebClient()) // WebClient class inherits IDisposable
+            {
+                client.Headers.Add("user-agent", "Mozilla/5.0 (MeeGo; NokiaN9) AppleWebKit/534.13 (KHTML, like Gecko) NokiaBrowser/8.5.0 Mobile Safari/534.13");
+                string htmlCode = client.DownloadString(siteUrl);
+                var doc = new HtmlDocument();
+                doc.LoadHtml(htmlCode);
+                string site_XPath = "//*[@id=\"dvChartItems\"]";
+                var node = doc.DocumentNode.SelectSingleNode(site_XPath);
+                for (var index = 0; index < node.ChildNodes.Count; index++)
+                {
+                    var item_Row = doc.DocumentNode.SelectSingleNode(site_XPath).ChildNodes[index];
+                    foreach (var nodes in item_Row.ChildNodes)
+                    {
+                        if (nodes.Attributes["class"].Value.Contains("title-artist"))
+                        {
+                            Console.WriteLine(nodes.ChildNodes[0].InnerText);
+                        }
+
+                    }
+                }
+            }
         }
 
         private static void AnalyseAllFiles()
         {
-            Filter = false;
-            if (Filter)
-                path = Path.Combine(@"D:\Music - Copy", "filter");
-            files = Directory.GetFiles(path, "*.mp3", SearchOption.TopDirectoryOnly);
+            Dictionary<string, string> changedFiles = new Dictionary<string, string>();
+            ColoredConsoleWrite(ConsoleColor.Yellow, "Processing song names...");
+            _filter = false;
+            if (_filter)
+                _path = Path.Combine(@"D:\Music - Copy", "filter");
+            _files = Directory.GetFiles(_path, "*.mp3", SearchOption.TopDirectoryOnly);
 
-            foreach (string filePath in files)
+            foreach (string filePath in _files)
             {
                 if (!filePath.Contains(".ini"))
                     using (var file = File.Create(filePath))
                     {
                         if (!file.Tag.Pictures.Any())
-                            new Thread(() => { ProcessArtwork(filePath); }).Start();
-                        Thread.Sleep(20);
+                        {
+                            new Thread(() =>
+                            {
+                                try
+                                {
+                                    Do(() => ProcessArtwork(filePath), TimeSpan.FromSeconds(2));
+                                }
+                                catch
+                                {
+                                    // ignored
+                                }
+                            }).Start();
+                            Thread.Sleep(1000);
+                        }
                     }
+                //string lyrics = RetreiveLyrics(filePath);
+                //if (lyrics != "")
+                //{
+                //    Console.WriteLine(filePath);
+                //    Console.Write(lyrics);
+                //    Console.ReadKey();
+                //}
+                string fixedFileName = FixFile(filePath);
+                if (fixedFileName != Path.GetFileNameWithoutExtension(filePath))
+                {
+                    changedFiles.Add(Path.GetFileNameWithoutExtension(filePath), fixedFileName);
+                }
+                int fileIndex = Array.IndexOf(_files, filePath) + 1;
+                int fileAmount = _files.Count();
+                float percentage = ((float)fileIndex / (float)fileAmount) * 100;
+                ColoredConsoleWrite(ConsoleColor.Green, string.Format("\r{0}%       ", percentage), true);
+            }
+            Space();
+            ColoredConsoleWrite(ConsoleColor.Yellow, "Finished Processing Song Names.");
+            if (changedFiles.Any())
+            {
+                ColoredConsoleWrite(ConsoleColor.Magenta, "The following names have been changed:");
+                foreach (var s in changedFiles)
+                {
+                    ColoredConsoleWrite(ConsoleColor.DarkGreen, "Old: " + Path.GetFileNameWithoutExtension(s.Key) + ", ", true);
 
-                FixFile(filePath);
+                    ColoredConsoleWrite(ConsoleColor.Green, "New: " + s.Value);
+                }
+            }
+            else
+            {
+                ColoredConsoleWrite(ConsoleColor.Green, "No names changes have been made.");
             }
         }
 
-        private static void ProcessArtwork(string filename, bool showdiag = false)
+        private static bool ProcessArtwork(string filename, bool showdiag = false)
         {
             if (filename.Contains("-"))
             {
-                int fileCount = files.Count();
-                if (GoogleImageSearch(Path.GetFileNameWithoutExtension(filename), showdiag))
-                {
-                    _processedArtwork++;
-                    ColoredConsoleWrite(ConsoleColor.Red,
-                        "Artwork for File ( " + _processedArtwork + "/" + fileCount + " )");
-                }
+                int fileCount = _files.Count();
+                return GoogleImageSearch(Path.GetFileNameWithoutExtension(filename), showdiag);
             }
-        }
-
-        private static void Main(string[] args)
-        {
-            if (Filter)
-                path = @"D:\Music - Copy";
-            ShowWindow(GetConsoleWindow(), SW_HIDE);
-            WindowHidden = true;
-            var notifyThread = new Thread(
-                delegate()
-                {
-                    menu = new ContextMenu();
-
-                    menu.MenuItems.Add(0, new MenuItem("List Artists", mnuArtists_Click));
-                    menu.MenuItems.Add(1, new MenuItem("Exit", mnuExit_Click));
-
-                    notificationIcon = new NotifyIcon
-                    {
-                        Icon = Resources.mp34,
-                        ContextMenu = menu,
-                        Text = "MP3 File Monitor -- Made for Rohyl, by Rohyl"
-                    };
-                    notificationIcon.DoubleClick += NotificationIcon_Click;
-
-                    notificationIcon.Visible = true;
-                    Application.Run();
-                }
-                );
-            files = Directory.GetFiles(path, "*.mp3", SearchOption.TopDirectoryOnly);
-            notifyThread.Start();
-            var monitor = new FileSystemWatcher(path, "*.mp3") {EnableRaisingEvents = true};
-            monitor.Created += monitor_CreatedOrChanged;
-            monitor.Renamed += monitor_CreatedOrChanged;
-            AnalyseAllFiles();
-            while (true)
-            {
-                switch (Console.ReadLine())
-                {
-                    case "filter":
-                        Filter = true;
-                        path = @"D:\Music - Copy";
-                        ColoredConsoleWrite(ConsoleColor.Cyan, "Filter has been enabled.");
-                        break;
-                    case "regular":
-                        Filter = false;
-                        path = @"D:\Music";
-                        ColoredConsoleWrite(ConsoleColor.Cyan, "Filter has been disabled.");
-                        break;
-                    case "analyse":
-                        AnalyseAllFiles();
-                        break;
-                    case "dump artwork":
-                        DumpArtwork();
-                        break;
-                }
-            }
+            return false;
         }
 
         private static void DumpArtwork()
         {
             var spath = @"D:\Artwork Dump";
 
-            files = Directory.GetFiles(path, "*.mp3", SearchOption.TopDirectoryOnly);
+            _files = Directory.GetFiles(_path, "*.mp3", SearchOption.TopDirectoryOnly);
             Directory.CreateDirectory(spath);
-            foreach (string filePath in files)
+            foreach (string filePath in _files)
             {
                 using (var file = File.Create(filePath))
                 {
@@ -396,15 +519,15 @@ namespace MP3_File_Auto_Tagger
 
         private static void NotificationIcon_Click(object sender, EventArgs e)
         {
-            if (WindowHidden)
+            if (_windowHidden)
             {
-                WindowHidden = false;
-                ShowWindow(GetConsoleWindow(), SW_SHOW);
+                _windowHidden = false;
+                ShowWindow(GetConsoleWindow(), SwShow);
             }
             else
             {
-                WindowHidden = true;
-                ShowWindow(GetConsoleWindow(), SW_HIDE);
+                _windowHidden = true;
+                ShowWindow(GetConsoleWindow(), SwHide);
             }
         }
 
@@ -424,39 +547,29 @@ namespace MP3_File_Auto_Tagger
             Console.ForegroundColor = originalColor;
         }
 
-        private static T GetRandomEnum<T>()
-        {
-            return Enum.GetValues(typeof (T)).Cast<T>().OrderBy(e => Guid.NewGuid()).First();
-        }
-
         private static void mnuExit_Click(object sender, EventArgs e)
         {
-            notificationIcon.Dispose();
+            NotificationIcon.Dispose();
             Application.Exit();
             Environment.Exit(0);
         }
 
-        private static void FixFile(string filePath)
+        private static string FixFile(string filePath)
         {
             if (filePath.Contains("summer"))
             {
             }
-            var file = new Mp3File();
-            string finalName = file.FixFileName(filePath);
-            string movePath = Path.Combine(path, finalName + ".mp3");
+            var file = new TrontorMP3File(filePath);
+            string finalName = file.FixFileName();
+            string movePath = Path.Combine(_path, finalName + ".mp3");
             if (filePath != movePath && !System.IO.File.Exists(movePath))
                 System.IO.File.Move(filePath, movePath);
-            ColoredConsoleWrite(ConsoleColor.Green, finalName);
-        }
-
-        private static void PrintLine()
-        {
-            Console.WriteLine(new string('-', tableWidth));
+            return finalName;
         }
 
         private static void PrintRow(params string[] columns)
         {
-            int width = (tableWidth - columns.Length)/columns.Length;
+            int width = (_tableWidth - columns.Length) / columns.Length;
             var row = "|";
 
             foreach (string column in columns)
@@ -472,17 +585,17 @@ namespace MP3_File_Auto_Tagger
             text = text.Length > width ? text.Substring(0, width - 3) + "..." : text;
             return string.IsNullOrEmpty(text)
                 ? new string(' ', width)
-                : text.PadRight(width - (width - text.Length)/2).PadLeft(width);
+                : text.PadRight(width - (width - text.Length) / 2).PadLeft(width);
         }
 
         private static void mnuArtists_Click(object sender, EventArgs e)
         {
             ShowWindow(GetConsoleWindow(), 3);
 
-            files = Directory.GetFiles(path, "*.mp3", SearchOption.TopDirectoryOnly);
+            _files = Directory.GetFiles(_path, "*.mp3", SearchOption.TopDirectoryOnly);
             var list = new List<string>();
             var titles = new List<string>();
-            foreach (string filePath in files)
+            foreach (string filePath in _files)
             {
                 if (filePath.Contains(".ini")) continue;
                 using (var file = File.Create(filePath))
@@ -501,7 +614,7 @@ namespace MP3_File_Auto_Tagger
                 }
             }
             string longeststring = list.OrderByDescending(s => s.Length).First();
-            tableWidth = longeststring.Length*7 + 5;
+            _tableWidth = longeststring.Length * 7 + 5;
             var strings = DivideStrings(7, list.ToArray());
             foreach (var strs in strings)
             {
@@ -520,12 +633,12 @@ namespace MP3_File_Auto_Tagger
         {
             var arrays = new List<string[]>();
 
-            int arrayCount = allStrings.Length/expectedStringsPerArray;
+            int arrayCount = allStrings.Length / expectedStringsPerArray;
 
             int elemsRemaining = allStrings.Length;
             for (int arrsRemaining = arrayCount; arrsRemaining >= 1; arrsRemaining--)
             {
-                int elementCount = elemsRemaining/arrsRemaining;
+                int elementCount = elemsRemaining / arrsRemaining;
 
                 var array = CopyPart(allStrings, elemsRemaining - elementCount, elementCount);
                 arrays.Insert(0, array);
@@ -546,9 +659,22 @@ namespace MP3_File_Auto_Tagger
         {
             try
             {
-                files = Directory.GetFiles(path, "*.mp3", SearchOption.TopDirectoryOnly);
-                FixFile(e.FullPath);
-                ProcessArtwork(e.FullPath, true);
+                _files = Directory.GetFiles(_path, "*.mp3", SearchOption.TopDirectoryOnly);
+                string fixedFile = FixFile(e.FullPath);
+                string oldFile = Path.GetFileNameWithoutExtension(e.FullPath);
+                if (oldFile != fixedFile)
+                {
+                    ColoredConsoleWrite(ConsoleColor.Magenta, "The following files has been detected and modified:");
+                    ColoredConsoleWrite(ConsoleColor.DarkGreen, "Old: " + oldFile + ", ", true);
+                    ColoredConsoleWrite(ConsoleColor.Green, "New: " + fixedFile);
+                    Space();
+                }
+                if (ProcessArtwork(e.FullPath, true))
+                {
+                    ColoredConsoleWrite(ConsoleColor.Magenta, "The following file artwork has been detected and modified:");
+                    ColoredConsoleWrite(ConsoleColor.Green, "File name: " + fixedFile);
+                    Space();
+                }
             }
             catch
             {

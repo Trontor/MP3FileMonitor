@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
@@ -9,7 +10,7 @@ using File = System.IO.File;
 
 namespace MP3_File_Auto_Tagger
 {
-    public class Mp3File
+    public class TrontorMP3File
     {
         public static void Space()
         {
@@ -30,22 +31,25 @@ namespace MP3_File_Auto_Tagger
         private static Dictionary<string, string> _dictionary = new Dictionary<string, string>();
 
         private readonly List<string> _artists = new List<string>();
+
         public string FileNameNoAttachedArtists = "";
 
         public bool ReverseSplitHeifen;
         public string FilePath { get; set; }
         public string FileName { get; set; }
-        public string BaseArtist { get; set; }
-
-
-        public string Start
+        public string BaseArtist { get; set; } 
+        private string Start
         {
             get { return PartOfFileName(FileName, true); }
         }
-
-        public string End
+        private string End
         {
             get { return PartOfFileName(FileName, false); }
+        }
+
+        public TrontorMP3File(string filePath )
+        {
+            FilePath = filePath;
         }
 
         public int SplitHeifenKey { get; set; }
@@ -72,12 +76,11 @@ namespace MP3_File_Auto_Tagger
                 .ToDictionary(x => (string)x.Attribute("key"), x => (string)x.Attribute("value"));
         }
 
-        public string FixFileName(string path)
+        public string FixFileName()
         {
             LoadDictionary();
-            if (path == null) throw new ArgumentNullException("path");
-            FilePath = path;
-            FileName = Path.GetFileName(path).Replace(".mp3", "");
+            if (FilePath == null) throw new ArgumentNullException("path");
+            FileName = Path.GetFileName(FilePath).Replace(".mp3", "");
             if (!FileName.Contains("-"))
             {
                 Console.WriteLine("File does not contain a heifen to seperate :(... skipping");
@@ -123,7 +126,6 @@ namespace MP3_File_Auto_Tagger
             }
             return test.ToArray();
         }
-
 
         private void WriteId3Tags()
         {
@@ -185,7 +187,7 @@ namespace MP3_File_Auto_Tagger
             }
             FileName = result;
             if (featuredArtists.Count > 0)
-                FileName = FileName.Trim() + ")";
+                FileName = FileName.Trim() + ")"; 
         }
 
         private static int IndexOfNth(string str, char c, int n)
@@ -209,7 +211,7 @@ namespace MP3_File_Auto_Tagger
 
         private string PartOfFileName(string s, bool first)
         {
-            int savedSplitHeifen;
+            int savedSplitHeifen; 
             if (_dictionary.ContainsKey(FileName) && int.TryParse(_dictionary[FileName], out savedSplitHeifen))
                 SplitHeifenKey = savedSplitHeifen;
             int instanceCount = s.Count(f => f == '-');
