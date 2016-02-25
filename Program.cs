@@ -125,6 +125,8 @@ namespace MP3_File_Auto_Tagger
 
             throw new AggregateException(exceptions);
         }
+
+        [STAThread]
         private static void Main(string[] args)
         {
             if (_filter)
@@ -393,29 +395,37 @@ namespace MP3_File_Auto_Tagger
                 return (currentSize == newSize);
             }
         }
-
+        
+        private static bool completed = false;
+        private static WebBrowser ariaBrowser = new WebBrowser();
         private static void ScanAriaCharts()
         {
             string siteUrl = "http://www.ariacharts.com.au/Charts/Singles-Chart";
-            using (var client = new WebClient()) // WebClient class inherits IDisposable
+            ariaBrowser.DocumentCompleted += Program.AriaBrowserDocumentCompleted;
+            ariaBrowser.Navigate(siteUrl);
+            while (!completed)
             {
-                client.Headers.Add("user-agent", "Mozilla/5.0 (MeeGo; NokiaN9) AppleWebKit/534.13 (KHTML, like Gecko) NokiaBrowser/8.5.0 Mobile Safari/534.13");
-                string htmlCode = client.DownloadString(siteUrl);
-                var doc = new HtmlDocument();
-                doc.LoadHtml(htmlCode);
-                string site_XPath = "//*[@id=\"dvChartItems\"]";
-                var node = doc.DocumentNode.SelectSingleNode(site_XPath);
-                for (var index = 0; index < node.ChildNodes.Count; index++)
-                {
-                    var item_Row = doc.DocumentNode.SelectSingleNode(site_XPath).ChildNodes[index];
-                    foreach (var nodes in item_Row.ChildNodes)
-                    {
-                        if (nodes.Attributes["class"].Value.Contains("title-artist"))
-                        {
-                            Console.WriteLine(nodes.ChildNodes[0].InnerText);
-                        }
+                Application.DoEvents();
+                Thread.Sleep(100);
+            }
+        }
 
+        private static void AriaBrowserDocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
+        {
+            var doc = new HtmlDocument();
+            doc.LoadHtml(ariaBrowser.DocumentText);
+            string site_XPath = "//*[@id=\"dvChartItems\"]";
+            var node = doc.DocumentNode.SelectSingleNode(site_XPath);
+            for (var index = 0; index < node.ChildNodes.Count; index++)
+            {
+                var item_Row = doc.DocumentNode.SelectSingleNode(site_XPath).ChildNodes[index];
+                foreach (var nodes in item_Row.ChildNodes)
+                {
+                    if (nodes.Attributes["class"].Value.Contains("title-artist"))
+                    {
+                        Console.WriteLine(nodes.ChildNodes[0].InnerText);
                     }
+
                 }
             }
         }
