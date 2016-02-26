@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MP3 File Auto-Tagger", "MP3 File Auto-Tagger.csproj", "{F561B2EC-DEC9-4097-BD34-2850557B402B}"
 EndProject
+<<<<<<< HEAD
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MP3 Auto-Tagger GUI", "..\MP3 Auto-Tagger GUI\MP3 Auto-Tagger GUI.csproj", "{952C090B-C2D7-4596-9D86-43DEC8652F29}"
+=======
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MP3 File Auto-Tagger GUI", "..\MP3 File Auto-Tagger GUI\MP3 File Auto-Tagger GUI.csproj", "{B10702DD-3AA2-43A3-924C-17C7537DB543}"
+>>>>>>> origin/master
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,10 +19,17 @@ Global
 		{F561B2EC-DEC9-4097-BD34-2850557B402B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F561B2EC-DEC9-4097-BD34-2850557B402B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F561B2EC-DEC9-4097-BD34-2850557B402B}.Release|Any CPU.Build.0 = Release|Any CPU
+<<<<<<< HEAD
 		{952C090B-C2D7-4596-9D86-43DEC8652F29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{952C090B-C2D7-4596-9D86-43DEC8652F29}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{952C090B-C2D7-4596-9D86-43DEC8652F29}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{952C090B-C2D7-4596-9D86-43DEC8652F29}.Release|Any CPU.Build.0 = Release|Any CPU
+=======
+		{B10702DD-3AA2-43A3-924C-17C7537DB543}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B10702DD-3AA2-43A3-924C-17C7537DB543}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B10702DD-3AA2-43A3-924C-17C7537DB543}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B10702DD-3AA2-43A3-924C-17C7537DB543}.Release|Any CPU.Build.0 = Release|Any CPU
+>>>>>>> origin/master
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
