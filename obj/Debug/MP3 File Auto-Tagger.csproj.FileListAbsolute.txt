@@ -22,3 +22,9 @@ C:\Users\Rohyl Joshi\Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tag
 C:\Users\Rohyl Joshi\Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.exe
 C:\Users\Rohyl Joshi\Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.pdb
 C:\Users\Rohyl Joshi\Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.csprojResolveAssemblyReference.cache
+D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\obj\Debug\MP3_File_Auto_Tagger.Properties.Resources.resources
+D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.csproj.GenerateResource.Cache
+D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\bin\Debug\HtmlAgilityPack.dll
+D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\bin\Debug\HtmlAgilityPack.pdb
+D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\bin\Debug\HtmlAgilityPack.xml
+D:\Documents\rjoshi1\My Documents\GitHub\MP3FileMonitor\obj\Debug\MP3 File Auto-Tagger.csprojResolveAssemblyReference.cache

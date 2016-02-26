@@ -32,15 +32,6 @@ namespace MP3_File_Auto_Tagger
     /// <summary>
     ///     Wrapper class so that we can return an IWin32Window given a hwnd
     /// </summary>
-    public class WindowWrapper : IWin32Window
-    {
-        public WindowWrapper(IntPtr handle)
-        {
-            Handle = handle;
-        }
-
-        public IntPtr Handle { get; }
-    }
 
     internal class Program
     {
